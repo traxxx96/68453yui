@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HabitGrid — Minimal Daily Habit Tracker</title>
+  <meta name="description" content="A minimal, professional daily habit tracker with LeetCode-style activity grids." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='5' y='5' width='40' height='40' rx='8' fill='%232ea043'/><rect x='55' y='5' width='40' height='40' rx='8' fill='%23196c2e'/><rect x='5' y='55' width='40' height='40' rx='8' fill='%23033a16'/><rect x='55' y='55' width='40' height='40' rx='8' fill='%2356d364'/></svg>" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="brand-name">HabitGrid</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="export-btn" title="Export data as JSON">Export</button>
+        <button class="btn btn-ghost" id="import-btn" title="Import data from JSON">Import</button>
+        <input type="file" id="import-input" accept="application/json" hidden />
+        <button class="icon-btn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+          <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+        <button class="btn btn-primary" id="add-habit-btn">+ New Habit</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Overview stats -->
+    <section class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-today">0/0</div>
+        <div class="stat-label">Completed Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-streak">0</div>
+        <div class="stat-label">Best Active Streak</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-month">0%</div>
+        <div class="stat-label">30-Day Consistency</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-label">Total Check-ins</div>
+      </div>
+    </section>
+
+    <!-- Overall activity heatmap -->
+    <section class="panel" id="overview-panel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <h2 class="panel-title">Activity</h2>
+          <span class="panel-subtitle" id="overview-summary"></span>
+        </div>
+        <div class="year-tabs" id="year-tabs"></div>
+      </div>
+      <div class="heatmap-scroll">
+        <div class="heatmap" id="overview-heatmap"></div>
+      </div>
+      <div class="heatmap-legend">
+        <span>Less</span>
+        <span class="legend-cell l0"></span>
+        <span class="legend-cell l1"></span>
+        <span class="legend-cell l2"></span>
+        <span class="legend-cell l3"></span>
+        <span class="legend-cell l4"></span>
+        <span>More</span>
+      </div>
+    </section>
+
+    <!-- Today checklist -->
+    <section class="panel" id="today-panel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <h2 class="panel-title">Today</h2>
+          <span class="panel-subtitle" id="today-date"></span>
+        </div>
+        <div class="today-progress">
+          <div class="progress-track"><div class="progress-fill" id="today-progress-fill"></div></div>
+          <span class="progress-label mono" id="today-progress-label">0%</span>
+        </div>
+      </div>
+      <ul class="today-list" id="today-list"></ul>
+    </section>
+
+    <!-- Per-habit grids -->
+    <section id="habits-section">
+      <div class="section-heading">
+        <h2 class="panel-title">Habits</h2>
+        <div class="sort-group">
+          <label for="sort-select" class="sort-label">Sort</label>
+          <select id="sort-select" class="select">
+            <option value="created">Date created</option>
+            <option value="name">Name</option>
+            <option value="streak">Current streak</option>
+            <option value="rate">30-day rate</option>
+          </select>
+        </div>
+      </div>
+      <div id="habit-cards"></div>
+      <div class="empty-state" id="empty-state" hidden>
+        <div class="empty-grid" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <h3>No habits yet</h3>
+        <p>Create your first habit and start filling the grid — one day at a time.</p>
+        <button class="btn btn-primary" id="empty-add-btn">+ New Habit</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>HabitGrid — your data stays in your browser.</span>
+  </footer>
+
+  <!-- Habit modal -->
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h3 id="modal-title">New Habit</h3>
+        <button class="icon-btn" id="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="habit-form">
+        <div class="form-field">
+          <label for="habit-name">Name</label>
+          <input type="text" id="habit-name" maxlength="40" placeholder="e.g. Read 20 minutes" required autocomplete="off" />
+        </div>
+        <div class="form-field">
+          <label>Icon</label>
+          <div class="emoji-grid" id="emoji-grid"></div>
+        </div>
+        <div class="form-field">
+          <label>Color</label>
+          <div class="color-grid" id="color-grid"></div>
+        </div>
+        <div class="form-field">
+          <label for="habit-goal">Weekly goal <span class="hint">(days per week)</span></label>
+          <div class="goal-row">
+            <input type="range" id="habit-goal" min="1" max="7" value="7" />
+            <span class="mono goal-value" id="goal-value">7×</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-danger" id="delete-habit-btn" hidden>Delete</button>
+          <div class="spacer"></div>
+          <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-btn">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <div class="cell-tooltip" id="cell-tooltip" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
